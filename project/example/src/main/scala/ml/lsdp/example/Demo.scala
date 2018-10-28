@@ -1,48 +1,47 @@
 package ml.lsdp.example
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.mllib.random.RandomRDDs._
-import org.apache.spark.rdd.RDD
+import org.apache.flink.streaming.api.scala._
+import org.apache.flink.api.java.utils._
+import org.apache.flink.api.scala.utils._
+import org.apache.flink.streaming.api.windowing.time.Time
+
 import org.slf4j.{Logger, LoggerFactory}
 
 object Demo {
-
-def main(args: Array[String]): Unit ={
-
-  val log = LoggerFactory.getLogger(this.getClass)
-
-  val spark = SparkSession
-    .builder
-    .appName("Spark Demo")
-    .getOrCreate()
-
-  log.info("Spark Demo start")
   
-  import spark.implicits._
+    def main(args: Array[String]) : Unit = {
 
-  val normalDataSet = normalRDD(spark.sparkContext, 10000000).toDS()
+        // the port to connect to
+        val port: Int = try {
+            ParameterTool.fromArgs(args).getInt("port")
+        } catch {
+            case e: Exception => {
+                System.err.println("No port specified. Please run 'Demo --port <port>'")
+                return
+            }
+        }
 
+        // get the execution environment
+        val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
+        // get input data by connecting to the socket
+        val text = env.socketTextStream("localhost", port, '\n')
 
-  val counts1: RDD[(Int, Long)] =
-    normalDataSet.map(n => ((n * 100.0) % 10).toInt).map(n => (n, 1L)).rdd.aggregateByKey(0L)(seqOp = (agg, c) => agg+c, combOp = (c1, c2) => c1+c2)
+        // parse the data, group it, window it, and aggregate the counts
+        val windowCounts = text
+            .flatMap { w => w.split("\\s") }
+            .map { w => WordWithCount(w, 1) }
+            .keyBy("word")
+            .timeWindow(Time.seconds(5), Time.seconds(1))
+            .sum("count")
 
-  log.info(s"${counts1.collect().toMap}")
+        // print the results with a single thread, rather than in parallel
+        windowCounts.print().setParallelism(1)
 
+        env.execute("Socket Window WordCount")
+    }
 
-
-  val counts2: collection.Map[Int, Long] =
-    normalDataSet.map(n => ((n * 100.0) % 10).toInt).rdd.countByValue()
-
-  log.info(s"$counts2")
-
-
-  val mean = normalDataSet.rdd.mean()
-  val stdDev = normalDataSet.rdd.stdev()
-  val max = normalDataSet.rdd.max()
-  val min = normalDataSet.rdd.min()
-
-  log.info(s"Mean: $mean, stdDev: $stdDev, max: $max, min $min")
-}
+    // Data type for words with count
+    case class WordWithCount(word: String, count: Long)
 
 }
