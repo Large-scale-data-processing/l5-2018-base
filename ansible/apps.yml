@@ -28,7 +28,7 @@
 - name: "Alias start-cluster"
   become: yes
   become_user: root
-  raw: "echo 'alias start-cluster=\"/opt/apache-flink/bin/start-cluster\"' > /etc/profile.d/flink.sh"
+  raw: "echo 'alias start-cluster=\"/opt/apache-flink/bin/start-cluster.sh\"' > /etc/profile.d/flink.sh"
 
 - name: "Alias flink"
   become: yes
