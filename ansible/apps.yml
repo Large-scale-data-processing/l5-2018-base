@@ -13,7 +13,7 @@
   become: yes
   become_user: root
   unarchive:
-    src: http://ftp.man.poznan.pl/apache/flink/flink-1.6.2/flink-1.6.2-bin-scala_2.11.tgz
+    src: http://ftp.man.poznan.pl/apache/flink/flink-1.7.0/flink-1.7.0-bin-hadoop28-scala_2.11.tgz
     dest: /opt
     remote_src: yes
 
@@ -21,7 +21,7 @@
   become: yes
   become_user: root
   file:
-    src: /opt/flink-1.6.2
+    src: /opt/flink-1.7.0
     dest: /opt/apache-flink
     state: link
 
