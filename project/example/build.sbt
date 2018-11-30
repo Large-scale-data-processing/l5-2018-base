@@ -4,7 +4,7 @@ version := "0.0.1"
 
 scalaVersion := "2.11.8"
 
-val flinkVersion = "1.6.1"
+val flinkVersion = "1.6.2"
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
